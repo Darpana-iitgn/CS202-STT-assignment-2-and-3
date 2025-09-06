@@ -1,13 +1,9 @@
-# Filename: llm_rectifier.py
-# Purpose: Run LLM inference, rectifier, and LLM-based evaluation (RQ1–RQ3)
-# Conforms to CS202 Lab Assignment 2
-# Uses: CommitPredictorT5 (generator), Flan-T5 (rectifier), MiniLM (evaluator)
-
 import os
 import pandas as pd
 import torch
 import matplotlib.pyplot as plt
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+from tqdm import tqdm
 
 # =====================
 # Config
@@ -121,21 +117,30 @@ def is_bugfix_message(msg):
 
     result = evaluator(
         msg,
-        candidate_labels=["bug fix", "feature", "refactor", "test update"],
+        candidate_labels=[
+            "bug fix", "fix", "bug", "error correction",
+            "patch", "defect correction", "handle issue",
+            "feature", "refactor", "test update"
+        ],
         hypothesis_template="This commit is a {}."
     )
-    top_label = result["labels"][0]
-    return top_label == "bug fix"
+    top_label = result["labels"][0].lower()
+    if top_label in ["bug fix", "fix", "bug", "error correction", "patch", "defect correction", "handle issue"]:
+        return True
+    BUG_KEYWORDS = ["fix", "bug", "error", "issue", "defect", "patch", "handle"]
+    if any(word in msg.lower() for word in BUG_KEYWORDS):
+        return True
+    return False
+
 
 def evaluate(df):
-    """LLM-based evaluation for RQ1, RQ2, RQ3"""
     total = len(df)
     if total == 0:
         return {"RQ1": 0, "RQ2": 0, "RQ3": 0}
 
-    rq1_hits = sum(df["Message"].apply(is_bugfix_message))
-    rq2_hits = sum(df["LLM Inference (fix type)"].apply(is_bugfix_message))
-    rq3_hits = sum(df["Rectified Message"].apply(is_bugfix_message))
+    rq1_hits = sum(is_bugfix_message(msg) for msg in tqdm(df["Message"], desc="Evaluating RQ1"))
+    rq2_hits = sum(is_bugfix_message(msg) for msg in tqdm(df["LLM Inference (fix type)"], desc="Evaluating RQ2"))
+    rq3_hits = sum(is_bugfix_message(msg) for msg in tqdm(df["Rectified Message"], desc="Evaluating RQ3"))
 
     return {
         "RQ1 (Developer msg hit rate)": rq1_hits / total,
@@ -167,12 +172,16 @@ def plot_hit_rates(hit_rates):
 def main():
     print(f"Reading input file: {INPUT_FILE}")
     df = pd.read_csv(INPUT_FILE)
+    
+	# Debug mode: process only first N rows
+    N = 50  # try 50 rows first
+    df = df.head(N)
 
     if "Diff" not in df.columns or "Message" not in df.columns:
         raise ValueError("Input CSV must contain 'Diff' and 'Message' columns.")
 
     llm_outputs, rectified_outputs = [], []
-    for idx, row in df.iterrows():
+    for idx, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):
         diff_text = str(row.get("Diff", ""))
         original_msg = str(row.get("Message", ""))
         filename = str(row.get("Filename", "unknown"))
@@ -191,9 +200,6 @@ def main():
 
         llm_outputs.append(llm_msg)
         rectified_outputs.append(rectified_msg)
-
-        if idx % 20 == 0:
-            print(f"Processed {idx} rows...")
 
     df["LLM Inference (fix type)"] = llm_outputs
     df["Rectified Message"] = rectified_outputs
