@@ -172,10 +172,6 @@ def plot_hit_rates(hit_rates):
 def main():
     print(f"Reading input file: {INPUT_FILE}")
     df = pd.read_csv(INPUT_FILE)
-    
-	# Debug mode: process only first N rows
-    N = 50  # try 50 rows first
-    df = df.head(N)
 
     if "Diff" not in df.columns or "Message" not in df.columns:
         raise ValueError("Input CSV must contain 'Diff' and 'Message' columns.")
