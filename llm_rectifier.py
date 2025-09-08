@@ -5,9 +5,7 @@ import matplotlib.pyplot as plt
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 from tqdm import tqdm
 
-# =====================
 # Config
-# =====================
 DATA_DIR = "output_files"
 INPUT_FILE = os.path.join(DATA_DIR, "modified_files.csv")
 OUTPUT_FILE = os.path.join(DATA_DIR, "llm_rectified_message.csv")
@@ -21,9 +19,7 @@ EVAL_MODEL_NAME = "facebook/bart-large-mnli"       # evaluator (zero-shot classi
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-# =====================
 # Load Models
-# =====================
 print("Loading models...")
 gen_tokenizer = AutoTokenizer.from_pretrained(GEN_MODEL_NAME)
 gen_model = AutoModelForSeq2SeqLM.from_pretrained(GEN_MODEL_NAME).to(device)
@@ -36,9 +32,7 @@ evaluator = pipeline("zero-shot-classification", model=EVAL_MODEL_NAME, device=0
 
 print("✅ Models loaded successfully")
 
-# =====================
 # Generator (first LLM)
-# =====================
 def generate_commit_message(diff_text, max_length=64):
     if not isinstance(diff_text, str) or len(diff_text.strip()) == 0:
         return ""
@@ -58,9 +52,7 @@ def generate_commit_message(diff_text, max_length=64):
         )
     return gen_tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
-# =====================
 # Rectifier (second LLM)
-# =====================
 def llm_rectifier(original_msg, llm_msg, filename, diff_text, max_length=64):
     if not llm_msg.strip():
         return original_msg.strip()
@@ -104,9 +96,7 @@ If improvement, use "Improve" or "Refactor".
         rectified = llm_msg.strip() or original_msg.strip()
     return rectified
 
-# =====================
 # Evaluator (third LLM)
-# =====================
 def is_bugfix_message(msg):
     """
     Uses zero-shot classification to judge if a commit message
@@ -148,9 +138,7 @@ def evaluate(df):
         "RQ3 (Rectifier msg hit rate)": rq3_hits / total,
     }
 
-# =====================
 # Plot Evaluation
-# =====================
 def plot_hit_rates(hit_rates):
     plt.figure(figsize=(7, 4.5))
     labels = list(hit_rates.keys())
@@ -166,9 +154,7 @@ def plot_hit_rates(hit_rates):
     plt.show()
     print(f"📊 Plot saved to {PLOT_FILE}")
 
-# =====================
 # Main
-# =====================
 def main():
     print(f"Reading input file: {INPUT_FILE}")
     df = pd.read_csv(INPUT_FILE)
@@ -213,4 +199,3 @@ def main():
 if __name__ == "__main__":
     main()
     
-

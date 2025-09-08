@@ -1,4 +1,3 @@
-#!/usr/bin/env python3  # Shebang line for portability
 import os  # Filesystem interactions
 import re  # Regex for commit message patterns
 import csv  # CSV export
@@ -137,12 +136,14 @@ def identify_and_store_bug_fixing_commits(repo_path: str, output_dir: str, commi
                 print(f"[WARN] Skipping commit due to error: {commit.hash if hasattr(commit, 'hash') else 'unknown'} -> {ce}")
     except Exception as e:
         print(f"[ERROR] Mining failed: {e}")
+        
     commits_csv_path = os.path.join(output_dir, commits_csv_filename)
     files_csv_path = os.path.join(output_dir, modified_files_csv_filename)
     df_commits = pd.DataFrame(all_commit_rows)
     df_files = pd.DataFrame(all_file_rows)
     commit_cols = ["Hash", "Message", "Hashes of parents", "Is a merge commit?", "List of modified files"]
     file_cols = ["Hash", "Message", "Filename", "Source Code (before)", "Source Code (current)", "Diff", "LLM Inference (fix type)", "Rectified Message"]
+    
     for c in commit_cols:
         if c not in df_commits.columns:
             df_commits[c] = ""
@@ -152,6 +153,7 @@ def identify_and_store_bug_fixing_commits(repo_path: str, output_dir: str, commi
     if not df_commits.empty:
         df_commits["Hashes of parents"] = df_commits["Hashes of parents"].apply(lambda x: ";".join(map(str, x)) if isinstance(x, (list, tuple)) else (x or ""))
         df_commits["List of modified files"] = df_commits["List of modified files"].apply(lambda x: ";".join(map(str, x)) if isinstance(x, (list, tuple)) else (x or ""))
+    
     df_commits = df_commits.fillna("").astype(str)
     df_files = df_files.fillna("").astype(str)
     df_commits.to_csv(commits_csv_path, index=False, quoting=csv.QUOTE_ALL, escapechar="\\", encoding="utf-8")
@@ -169,4 +171,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

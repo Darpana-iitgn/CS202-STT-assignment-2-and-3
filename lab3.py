@@ -17,12 +17,7 @@ warnings.filterwarnings('ignore')
 
 class BugContextAnalyzer:
     def __init__(self, csv_path):
-        """
-        Initialize the analyzer with the CSV file path
-        
-        Args:
-            csv_path: Path to the CSV file from Lab 2
-        """
+        """Initialize the analyzer with the CSV file path"""
         self.csv_path = csv_path
         self.df = None
         
@@ -41,8 +36,7 @@ class BugContextAnalyzer:
             
             # Check required columns
             required_cols = ['Hash', 'Message', 'Filename', 'Source Code (before)', 
-                           'Source Code (current)', 'Diff', 'LLM Inference (fix type)', 
-                           'Rectified Message']
+                           'Source Code (current)', 'Diff', 'LLM Inference (fix type)', 'Rectified Message']
             
             missing_cols = [col for col in required_cols if col not in self.df.columns]
             if missing_cols:
@@ -175,10 +169,8 @@ class BugContextAnalyzer:
         
         try:
             # Tokenize both code snippets
-            inputs1 = self.tokenizer(code1, return_tensors='pt', truncation=True, 
-                                   padding=True, max_length=512)
-            inputs2 = self.tokenizer(code2, return_tensors='pt', truncation=True, 
-                                   padding=True, max_length=512)
+            inputs1 = self.tokenizer(code1, return_tensors='pt', truncation=True, padding=True, max_length=512)
+            inputs2 = self.tokenizer(code2, return_tensors='pt', truncation=True, padding=True, max_length=512)
             
             # Get embeddings
             with torch.no_grad():
@@ -244,8 +236,7 @@ class BugContextAnalyzer:
             print(f"Error computing token similarity: {e}")
             return 0.0
     
-    def classify_fixes(self, semantic_sim, token_sim, 
-                      semantic_threshold=0.80, token_threshold=0.75):
+    def classify_fixes(self, semantic_sim, token_sim, semantic_threshold=0.80, token_threshold=0.75):
         """Classify fixes as Major or Minor based on similarity thresholds"""
         semantic_class = "Minor" if semantic_sim >= semantic_threshold else "Major"
         token_class = "Minor" if token_sim >= token_threshold else "Major"
@@ -370,4 +361,3 @@ def main():
 if __name__ == "__main__":
     main()
     
-
